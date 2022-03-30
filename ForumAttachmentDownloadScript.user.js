@@ -3,7 +3,7 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.5.7
+// @version 1.5.8
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://jpg.church/images/2022/03/13/Thotsbay_Mobile_Logo_v1.1.png
@@ -28,8 +28,6 @@
 // @connect imagebam.com
 // @connect imgur.com
 // @connect jpg.church
-// @connect putme.ga
-// @connect putmega.com
 // @connect imgbox.com
 // @connect pixhost.to
 // @connect pixl.is
@@ -239,7 +237,7 @@ function headerHelper(link, isHLS = false, needsReferrer = false) {
 }
 
 async function download(post, fileName, altFileName) {
-    var thanks = false,
+    var thanks = true,
         createZip = true;
 
     var $text = $(post).children('a');
@@ -475,8 +473,8 @@ async function download(post, fileName, altFileName) {
                 let likeID;
                 try {
                     likeTag = post.parentNode.parentNode.parentNode.querySelector('.reaction--imageHidden');
-                    likeID = likeTag.getAttribute('data-th-react-plus-content-id');
-                    likeTag.setAttribute("href", `/posts/${likeID}/react?reaction_id=49`);
+                    likeID = likeTag.getAttribute('href').replace("id=1", "id=33");
+                    likeTag.setAttribute("href", likeID);
                     likeTag.click();
                 } catch {
                 }
@@ -524,14 +522,6 @@ function getPostLinks(post) {
             }
             if (typeof link !== 'undefined' && link) {
 
-                if (link.includes('putme.ga') || link.includes('putmega.com')) {
-                    if (!link.includes("/image/")) {
-                        link = link.replace('.th.', '.');
-                        link = link.replace(".md.", ".");
-                    } else {
-                        link = "";
-                    }
-                }
                 if (link.includes('jpg.church')) {
                     if (!link.includes("/image/")) {
                         link = link.replace('.th.', '.');
