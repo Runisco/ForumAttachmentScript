@@ -1,5 +1,5 @@
 # ForumAttachmentScript
-This script adds buttons to downloads posts from the sexy-egirls forum
+This script adds buttons to downloads posts from the Thotsbay forum
 
 # Installation
 1. install the tampermonkey browser extension
