@@ -3,7 +3,7 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.5.8
+// @version 1.5.9
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://jpg.church/images/2022/03/13/Thotsbay_Mobile_Logo_v1.1.png
@@ -21,6 +21,8 @@
 // @connect cyberdrop.cc
 // @connect cyberdrop.nl
 // @connect cyberdrop.to
+// @connect zz.fo
+// @connect zz.ht
 // @connect sendvid.com
 // @connect i.redd.it
 // @connect i.ibb.co
@@ -49,6 +51,22 @@
 
 
 // ==/UserScript==
+
+// ----- Settings ----- //
+
+var thanks = true;                 //Give thanks to posts?
+
+var cyberdropAlbums = false;       //Download Cyberdrop Albums?
+var bunkrAlbums = false;           //Download Bunkr Albums?
+var zzAlbums = false;               //Download zz Albums?
+
+var bunkrVideoLinks = true;        //Download Bunkr Video links?
+var cyberdropZzVids = true;        //Download Cyberdrop / ZZ video embeds?
+
+// ----- End Settings ----- //
+
+
+
 const imgurBase = 'https://i.imgur.com/{hash}.mp4';
 /**
 * Set to 'true', if you wanna be asked to input zip name on your own.
@@ -127,7 +145,7 @@ const getThreadTitle = () => {
 */
 
 const allowedDataHosts = ['pixeldrain.com', 'ibb.co', 'imagebam.com', 'imagevenue.com'];
-const allowedDataHostsRx = [/cyberdrop/, /bunkr/, /pixeldrain/, /ibb.co/, /imagebam.com/, /imagevenue.com/];
+const allowedDataHostsRx = [/cyberdrop/, /bunkr/, /pixeldrain/, /ibb.co/, /imagebam.com/, /imagevenue.com/, /zz/];
 var refHeader;
 var refUrl;
 var albumName;
@@ -161,6 +179,23 @@ async function gatherExternalLinks(externalLink, type) {
             responseType: 'document',
             onload: function (response) {
                 if (type === "cyberdrop") {
+
+                    var requestResponse = response.response;
+
+                    albumName = requestResponse.getElementsByTagName("h1")[0]["innerText"].replace(/\n\s/g, '').trim();
+                    albumName = albumName.replaceAll(REGEX_EMOJI, ILLEGAL_CHAR_REPLACEMENT).replaceAll(REGEX_WINDOWS, ILLEGAL_CHAR_REPLACEMENT);
+                    console.log("Album Name: " + albumName);
+
+                    var linkList = requestResponse.querySelectorAll('.image');
+
+                    for (let index = 0; index < linkList.length; index++) {
+                        const element = linkList[index];
+                        linkElement = element.getAttribute('href');
+                        resolveCache.push(linkElement);
+                    }
+                    resolve(resolveCache);
+                }
+                if (type === "zz") {
 
                     var requestResponse = response.response;
 
@@ -237,8 +272,7 @@ function headerHelper(link, isHLS = false, needsReferrer = false) {
 }
 
 async function download(post, fileName, altFileName) {
-    var thanks = true,
-        createZip = true;
+    var createZip = true;
 
     var $text = $(post).children('a');
     var urls = getPostLinks(post, false);
@@ -248,21 +282,73 @@ async function download(post, fileName, altFileName) {
     var postNumber = $(post).parent().find('li:last-child > a').text().trim();
     for (var i = 0, l = urls.length; i < l; i++) {
         if (urls[i].includes('cyberdrop')) {
-            if (urls[i].includes('/a/')) {
-                albumID = urls[i].split('/a/')[1];
-                console.log("URL: " + urls[i]);
-                console.log("Album ID: " + albumID);
-                createZip = false;
-                var extUrl = await gatherExternalLinks(urls[i], "cyberdrop");
-                if (extUrl.length > 0) {
-                    for (let index = 0; index < extUrl.length; index++) {
-                        const element = extUrl[index];
-                        urls.push(element);
-                        albuminfo.push({URL:element, albumName:albumName});
+            if (cyberdropAlbums){
+                if (urls[i].includes('/a/')) {
+                    albumID = urls[i].split('/a/')[1];
+                    console.log("URL: " + urls[i]);
+                    console.log("Album ID: " + albumID);
+                    createZip = false;
+                    var extUrl = await gatherExternalLinks(urls[i], "cyberdrop");
+                    if (extUrl.length > 0) {
+                        for (let index = 0; index < extUrl.length; index++) {
+                            const element = extUrl[index];
+                            urls.push(element);
+                            albuminfo.push({URL:element, albumName:albumName});
+                        }
                     }
+                    urls.splice(i, 1);
                 }
-                //urls[i] = '';
-                urls.splice(i, 1);
+            }else if (urls[i].includes('/a/')) {
+                urls[i] = '';
+            }
+        }
+        if (urls[i].includes('bunkr')) {
+            if (bunkrAlbums){
+                if (urls[i].includes('/a/')) {
+                    refUrl = urls[i];
+                    createZip = false;
+                    albumID = urls[i].split('/a/')[1];
+                    console.log("URL: " + urls[i]);
+                    console.log("Album ID: " + albumID);
+                    var extUrl = await gatherExternalLinks(urls[i], "bunkr");
+                    if (extUrl.length > 0) {
+                        for (let index = 0; index < extUrl.length; index++) {
+                            var element = extUrl[index];
+                            //console.log("extUrl" + element);
+
+                            if(Videos.some(s => element.includes(s))) {
+                                element = element.replace('cdn.', 'media-files.');
+                            }
+
+                            urls.push(element);
+                            albuminfo.push({URL:element, albumName:albumName});
+                        }
+                    }
+                    urls.splice(i, 1);
+                }
+            }else if (urls[i].includes('/a/')) {
+                urls[i] = '';
+            }
+        }
+        if (urls[i].includes('zz')) {
+            if (zzAlbums){
+                if (urls[i].includes('/a/')) {
+                    albumID = urls[i].split('/a/')[1];
+                    console.log("URL: " + urls[i]);
+                    console.log("Album ID: " + albumID);
+                    createZip = false;
+                    var extUrl = await gatherExternalLinks(urls[i], "zz");
+                    if (extUrl.length > 0) {
+                        for (let index = 0; index < extUrl.length; index++) {
+                            const element = extUrl[index];
+                            urls.push(element);
+                            albuminfo.push({URL:element, albumName:albumName});
+                        }
+                    }
+                    urls.splice(i, 1);
+                }
+            }else if (urls[i].includes('/a/')) {
+                urls[i] = '';
             }
         }
         if (urls[i].includes('ibb.co')) {
@@ -297,31 +383,6 @@ async function download(post, fileName, altFileName) {
                 }
             }
                 urls[i] = '';
-        }
-        if (urls[i].includes('bunkr')) {
-            if (urls[i].includes('/a/')) {
-                refUrl = urls[i];
-                createZip = false;
-                albumID = urls[i].split('/a/')[1];
-                console.log("URL: " + urls[i]);
-                console.log("Album ID: " + albumID);
-                var extUrl = await gatherExternalLinks(urls[i], "bunkr");
-                if (extUrl.length > 0) {
-                    for (let index = 0; index < extUrl.length; index++) {
-                        var element = extUrl[index];
-                        //console.log("extUrl" + element);
-
-                        if(Videos.some(s => element.includes(s))) {
-                            element = element.replace('cdn.', 'media-files.');
-                        }
-
-                        urls.push(element);
-                        albuminfo.push({URL:element, albumName:albumName});
-                    }
-                }
-                urls[i] = '';
-
-            }
         }
     }
     console.log(albuminfo);
@@ -413,6 +474,13 @@ async function download(post, fileName, altFileName) {
                                 console.log("cyberdrop album name: " + albumName);
                                 storePath = `${fileName.split('/')[0]}/${albumName} - CyberDrop/${file_name}`;
 
+                            } else if (response.finalUrl.includes('zz')) {
+
+                                //look up the URL in the albuminfo list and retrieve the correct album name from that
+                                let albumName = albuminfo.filter(item => (original_url.includes(item.URL))).map(item => item.albumName);
+                                console.log("zz album name: " + albumName);
+                                storePath = `${fileName.split('/')[0]}/${albumName} - zz/${file_name}`;
+
                             } else {
                                 storePath = `${fileName.split('/')[0]}/${postNumber}/${file_name}`;
                             }
@@ -499,7 +567,10 @@ function getPostLinks(post) {
                 link = getEmbedLink($(this));
             } else if ($(this).has('source').length) {
                 //only select visible source link
-                link = $(this)[0]["currentSrc"];
+                if (cyberdropZzVids){
+                    link = $(this)[0]["currentSrc"];
+                    console.log('here');
+                }
             } else {
                 link = $(this).is('[data-url]') ? $(this).data('url') : ($(this).is('[href]') ? $(this).attr('href') : $(this).data('src'));
             }
@@ -521,6 +592,10 @@ function getPostLinks(post) {
                 }
             }
             if (typeof link !== 'undefined' && link) {
+
+                if (link.includes ('wp.com/cyberdrop')){
+                    link = "";
+                }
 
                 if (link.includes('jpg.church')) {
                     if (!link.includes("/image/")) {
@@ -555,23 +630,29 @@ function getPostLinks(post) {
                 }
                 // bunkr non album implementation
                 if (link.includes('.bunkr.')) {
-                    if (!link.includes('/a/')) {
-                        if (link.includes('stream.bunkr')) {
-                            if (link.includes('.is/')) {
-                                link = link.replace(".is/v/", ".is/");
-                            } else {
-                                link = link.replace(".to/v/", ".is/");
+                    if (bunkrVideoLinks){
+                        if (!link.includes('/a/')) {
+                            if (link.includes('stream.bunkr')) {
+                                if (link.includes('.is/')) {
+                                    link = link.replace(".is/v/", ".is/");
+                                } else {
+                                    link = link.replace(".to/v/", ".is/");
+                                }
+                                link = link.replace("stream.", "media-files.");
                             }
-                            link = link.replace("stream.", "media-files.");
+                            else{
+                                if(Videos.some(s => link.includes(s))) {
+                                    console.log("original link: " + link);
+                                    link = link.replace('cdn.', 'media-files.');
+                                    //link = link.replace(".is/", ".is/d/");
+                                    link = link.replace(".to/", ".is/");
+                                    console.log("changed link: " + link);
+                                }
+                            }
                         }
-                        else{
-                            if(Videos.some(s => link.includes(s))) {
-                                console.log("original link: " + link);
-                                link = link.replace('cdn.', 'media-files.');
-                                //link = link.replace(".is/", ".is/d/");
-                                link = link.replace(".to/", ".is/");
-                                console.log("changed link: " + link);
-                            }
+                    } else{
+                        if(!(Images.some(s => link.includes(s)))){
+                            link ="";
                         }
                     }
                 }
@@ -631,7 +712,6 @@ function getEmbedLink($elem) {
     } else {
         embed = $elem.is('[src]') ? $elem.attr('src') : $elem.data('s9e-mediaembed-src');
     }
-
     /*if (embed.includes('imgur.min.html')) {
         const hash = embed.split('#').pop();
         const link = imgurBase.replace('{hash}', hash);
