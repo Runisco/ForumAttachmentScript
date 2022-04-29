@@ -3,7 +3,7 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.5.9
+// @version 1.6.0
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://jpg.church/images/2022/03/13/Thotsbay_Mobile_Logo_v1.1.png
@@ -23,7 +23,6 @@
 // @connect cyberdrop.to
 // @connect zz.fo
 // @connect zz.ht
-// @connect sendvid.com
 // @connect i.redd.it
 // @connect i.ibb.co
 // @connect ibb.co
@@ -58,7 +57,7 @@ var thanks = true;                 //Give thanks to posts?
 
 var cyberdropAlbums = false;       //Download Cyberdrop Albums?
 var bunkrAlbums = false;           //Download Bunkr Albums?
-var zzAlbums = false;               //Download zz Albums?
+var zzAlbums = false;              //Download zz Albums?
 
 var bunkrVideoLinks = true;        //Download Bunkr Video links?
 var cyberdropZzVids = true;        //Download Cyberdrop / ZZ video embeds?
@@ -144,8 +143,8 @@ const getThreadTitle = () => {
 * @return Formatted string.
 */
 
-const allowedDataHosts = ['pixeldrain.com', 'ibb.co', 'imagebam.com', 'imagevenue.com'];
-const allowedDataHostsRx = [/cyberdrop/, /bunkr/, /pixeldrain/, /ibb.co/, /imagebam.com/, /imagevenue.com/, /zz/];
+const allowedDataHosts = ['pixeldrain.com', 'ibb.co', 'imagebam.com', 'imagevenue.com', 'redgifs.com'];
+const allowedDataHostsRx = [/cyberdrop/, /bunkr/, /pixeldrain/, /ibb.co/, /imagebam.com/, /imagevenue.com/, /zz/, /redgifs.com/];
 var refHeader;
 var refUrl;
 var albumName;
@@ -255,7 +254,17 @@ async function gatherExternalLinks(externalLink, type) {
                     resolveCache.push(linkElement);
                     resolve(resolveCache);
                 }
+                if (type === "redgifs.com") {
+                    console.log("gets here");
 
+                    var requestResponse = response.response;
+                    console.log(requestResponse);
+                    linkElement = requestResponse.querySelector("meta[property='og:video']").getAttribute("content");
+                    linkElement = linkElement.replace("-mobile", "");
+                    console.log("redgifs url: " + linkElement);
+                    resolveCache.push(linkElement);
+                    resolve(resolveCache);
+                }
             }
         });
     });
@@ -356,7 +365,6 @@ async function download(post, fileName, altFileName) {
             if (extUrl.length > 0) {
                     for (let index = 0; index < extUrl.length; index++) {
                         const element = extUrl[index];
-                        //console.log("extUrl" + element);
                         urls.push(element);
                 }
             }
@@ -367,7 +375,6 @@ async function download(post, fileName, altFileName) {
             if (extUrl.length > 0) {
                     for (let index = 0; index < extUrl.length; index++) {
                         const element = extUrl[index];
-                        //console.log("extUrl" + element);
                         urls.push(element);
                 }
             }
@@ -378,11 +385,20 @@ async function download(post, fileName, altFileName) {
             if (extUrl.length > 0) {
                     for (let index = 0; index < extUrl.length; index++) {
                         const element = extUrl[index];
-                        //console.log("extUrl" + element);
                         urls.push(element);
                 }
             }
                 urls[i] = '';
+        }
+        if (urls[i].includes('redgifs.com')) {
+            var extUrl = await gatherExternalLinks(urls[i], "redgifs.com");
+            if (extUrl.length > 0) {
+                    for (let index = 0; index < extUrl.length; index++) {
+                        const element = extUrl[index];
+                        urls.push(element);
+                }
+            }
+            urls[i] = '';
         }
     }
     console.log(albuminfo);
@@ -454,20 +470,12 @@ async function download(post, fileName, altFileName) {
                         } else {
                             if (response.finalUrl.includes('bunkr')) {
 
-                                /*//Removing bunkrs ID from the filefile_name
-                                const ext = file_name.split('.').pop();
-                                file_name = file_name.replaceAll(/-[^-]+$|\.[A-Z0-9]{2,4}(?=-)/gi, '') + '.' + ext;*/
-
                                 //look up the URL in the albuminfo list and retrieve the correct album name from that
                                 let albumName = albuminfo.filter(item => (original_url.includes(item.URL))).map(item => item.albumName);
                                 console.log("bunkr album name: " + albumName);
                                 storePath = `${fileName.split('/')[0]}/${albumName} - Bunkr/${file_name}`;
 
                             } else if (response.finalUrl.includes('cyberdrop')) {
-
-                                /*//Removing cyberdrops ID from the filefile_name
-                                const ext = file_name.split('.').pop();
-                                file_name = file_name.replaceAll(/-[^-]+$|\.[A-Z0-9]{2,4}(?=-)/gi, '') + '.' + ext;*/
 
                                 //look up the URL in the albuminfo list and retrieve the correct album name from that
                                 let albumName = albuminfo.filter(item => (original_url.includes(item.URL))).map(item => item.albumName);
@@ -569,7 +577,6 @@ function getPostLinks(post) {
                 //only select visible source link
                 if (cyberdropZzVids){
                     link = $(this)[0]["currentSrc"];
-                    console.log('here');
                 }
             } else {
                 link = $(this).is('[data-url]') ? $(this).data('url') : ($(this).is('[href]') ? $(this).attr('href') : $(this).data('src'));
@@ -718,23 +725,15 @@ function getEmbedLink($elem) {
         return link;
     }*/
     if (embed.includes('redgifs.com/ifr')) {
-        const redgif = embed.replace('//redgifs.com/ifr/', 'https://thumbs2.redgifs.com/');
-        const link = redgif.concat('.mp4');
+        const link = embed;
         return link;
     }
     if (embed.includes('gfycat.com/ifr')) {
-        const gfycat = embed.replace('//gfycat.com/ifr/', 'https://giant.gfycat.com/').replace('?hd=1', '');
+        const gfycat = embed.replace('//gfycat.com/ifr/', 'https://giant.gfycat.com/').replace('?hd=1&autoplay=0', '');
         const link = gfycat.concat('.mp4');
         return link;
     }
     if (!embed) return null;
-    /*if (embed.includes('sendvid.com')) {
-        // embed = embed.replace('//', 'https://');
-        // var frameObj = $elem[0];
-        // console.log(frameObj);
-        // console.log(frameObj.contentWindow.document);
-        return embed;
-    }*/
 }
 
 jQuery(function ($) {
