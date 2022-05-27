@@ -3,10 +3,10 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.6.0
+// @version 1.6.1SAINT
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
-// @icon https://jpg.church/images/2022/03/13/Thotsbay_Mobile_Logo_v1.1.png
+// @icon https://simp3.jpg.church/images/Thotsbay-Logo.png
 // @license WTFPL; http://www.wtfpl.net/txt/copying/
 // @match https://forum.thotsbay.com/threads/*
 // @require https://code.jquery.com/jquery-3.3.1.min.js
@@ -21,8 +21,10 @@
 // @connect cyberdrop.cc
 // @connect cyberdrop.nl
 // @connect cyberdrop.to
+// @connect saint.to
 // @connect zz.fo
 // @connect zz.ht
+// @connect sendvid.com
 // @connect i.redd.it
 // @connect i.ibb.co
 // @connect ibb.co
@@ -57,7 +59,7 @@ var thanks = true;                 //Give thanks to posts?
 
 var cyberdropAlbums = false;       //Download Cyberdrop Albums?
 var bunkrAlbums = false;           //Download Bunkr Albums?
-var zzAlbums = false;              //Download zz Albums?
+var zzAlbums = false;               //Download zz Albums?
 
 var bunkrVideoLinks = true;        //Download Bunkr Video links?
 var cyberdropZzVids = true;        //Download Cyberdrop / ZZ video embeds?
@@ -143,8 +145,8 @@ const getThreadTitle = () => {
 * @return Formatted string.
 */
 
-const allowedDataHosts = ['pixeldrain.com', 'ibb.co', 'imagebam.com', 'imagevenue.com', 'redgifs.com'];
-const allowedDataHostsRx = [/cyberdrop/, /bunkr/, /pixeldrain/, /ibb.co/, /imagebam.com/, /imagevenue.com/, /zz/, /redgifs.com/];
+const allowedDataHosts = ['pixeldrain.com', 'ibb.co', 'imagebam.com', 'imagevenue.com', 'saint.to', 'redgifs.com'];
+const allowedDataHostsRx = [/cyberdrop/, /bunkr/, /pixeldrain/, /ibb.co/, /imagebam.com/, /imagevenue.com/, /zz/, /saint.to/, /redgifs.com/];
 var refHeader;
 var refUrl;
 var albumName;
@@ -254,8 +256,17 @@ async function gatherExternalLinks(externalLink, type) {
                     resolveCache.push(linkElement);
                     resolve(resolveCache);
                 }
+                if (type === "saint.to") {
+
+                    var requestResponse = response.response;
+
+
+                    linkElement = requestResponse.getElementsByTagName('source')[0].src;
+                    console.log("saintly url: " + linkElement);
+                    resolveCache.push(linkElement);
+                    resolve(resolveCache);
+                }
                 if (type === "redgifs.com") {
-                    console.log("gets here");
 
                     var requestResponse = response.response;
                     console.log(requestResponse);
@@ -326,7 +337,7 @@ async function download(post, fileName, altFileName) {
                             //console.log("extUrl" + element);
 
                             if(Videos.some(s => element.includes(s))) {
-                                element = element.replace('cdn.', 'media-files.');
+                                element = element.replace('//cdn', '//media-files');
                             }
 
                             urls.push(element);
@@ -390,6 +401,16 @@ async function download(post, fileName, altFileName) {
             }
                 urls[i] = '';
         }
+        if (urls[i].includes('saint.to')) {
+            var extUrl = await gatherExternalLinks(urls[i], "saint.to");
+            if (extUrl.length > 0) {
+                    for (let index = 0; index < extUrl.length; index++) {
+                        const element = extUrl[index];
+                        urls.push(element);
+                }
+            }
+            urls[i] = '';
+        }
         if (urls[i].includes('redgifs.com')) {
             var extUrl = await gatherExternalLinks(urls[i], "redgifs.com");
             if (extUrl.length > 0) {
@@ -423,24 +444,6 @@ async function download(post, fileName, altFileName) {
             //const isHLS = false;
             if (isHLS) {
                 console.log(JSON.stringify({ 'url': url.replace('//', '') }))
-                // GM_xmlhttpRequest({
-                //     method: 'GET',
-                //     url: url,
-                //     responseType: 'stream',
-                //     onloadstart: async function (r) {
-                //         if (r.readyState == 4 && r.status == 200) {
-                //             const reader = r.response.getReader();
-                //             while (true) {
-                //                 const { done, value } = await reader.read(); // value is Uint8Array
-                //                 if (value) {
-                //                     console.log(value.length, 'received')
-                //                 }
-                //                 if (done) break;
-                //             }
-                //             console.log('done');
-                //         }
-                //     }
-                // });
             }
             $text.text('Downloading...');
             $text.text(dataText.replace('%percent', 0));
@@ -650,8 +653,7 @@ function getPostLinks(post) {
                             else{
                                 if(Videos.some(s => link.includes(s))) {
                                     console.log("original link: " + link);
-                                    link = link.replace('cdn.', 'media-files.');
-                                    //link = link.replace(".is/", ".is/d/");
+                                    link = link.replace('//cdn', '//media-files');
                                     link = link.replace(".to/", ".is/");
                                     console.log("changed link: " + link);
                                 }
@@ -719,11 +721,6 @@ function getEmbedLink($elem) {
     } else {
         embed = $elem.is('[src]') ? $elem.attr('src') : $elem.data('s9e-mediaembed-src');
     }
-    /*if (embed.includes('imgur.min.html')) {
-        const hash = embed.split('#').pop();
-        const link = imgurBase.replace('{hash}', hash);
-        return link;
-    }*/
     if (embed.includes('redgifs.com/ifr')) {
         const link = embed;
         return link;
@@ -731,6 +728,10 @@ function getEmbedLink($elem) {
     if (embed.includes('gfycat.com/ifr')) {
         const gfycat = embed.replace('//gfycat.com/ifr/', 'https://giant.gfycat.com/').replace('?hd=1&autoplay=0', '');
         const link = gfycat.concat('.mp4');
+        return link;
+    }
+    if (embed.includes('saint.to')) {
+        const link = embed;
         return link;
     }
     if (!embed) return null;
