@@ -3,7 +3,7 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.6.2
+// @version 1.6.3
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://simp3.jpg.church/images/Thotsbay-Logo.png
@@ -145,8 +145,8 @@ const getThreadTitle = () => {
 * @return Formatted string.
 */
 
-const allowedDataHosts = ['pixeldrain.com', 'ibb.co', 'imagebam.com', 'imagevenue.com', 'saint.to', 'redgifs.com'];
-const allowedDataHostsRx = [/cyberdrop/, /bunkr/, /pixeldrain/, /ibb.co/, /imagebam.com/, /imagevenue.com/, /zz/, /saint.to/, /redgifs.com/];
+const allowedDataHosts = ['pixeldrain.com', 'ibb.co', 'imagebam.com', 'imagevenue.com', 'saint.to', 'redgifs.com', 'stream.bunkr'];
+const allowedDataHostsRx = [/cyberdrop/, /bunkr/, /pixeldrain/, /ibb.co/, /imagebam.com/, /imagevenue.com/, /zz/, /saint.to/, /redgifs.com/, /stream.bunkr/];
 var refHeader;
 var refUrl;
 var albumName;
@@ -269,10 +269,17 @@ async function gatherExternalLinks(externalLink, type) {
                 if (type === "redgifs.com") {
 
                     var requestResponse = response.response;
-                    console.log(requestResponse);
                     linkElement = requestResponse.querySelector("meta[property='og:video']").getAttribute("content");
                     linkElement = linkElement.replace("-mobile", "");
                     console.log("redgifs url: " + linkElement);
+                    resolveCache.push(linkElement);
+                    resolve(resolveCache);
+                }
+                if (type === "stream.bunkr") {
+
+                    var requestResponse = response.response;
+                    linkElement = requestResponse.getElementById('downloadBtn');
+                    console.log("bunkr download link: " + linkElement);
                     resolveCache.push(linkElement);
                     resolve(resolveCache);
                 }
@@ -334,7 +341,6 @@ async function download(post, fileName, altFileName) {
                     if (extUrl.length > 0) {
                         for (let index = 0; index < extUrl.length; index++) {
                             var element = extUrl[index];
-                            //console.log("extUrl" + element);
 
                             if(Videos.some(s => element.includes(s))) {
                                 element = element.replace('//cdn', '//media-files');
@@ -350,8 +356,8 @@ async function download(post, fileName, altFileName) {
                 urls[i] = '';
             }
         }
-        if (urls[i].includes('zz')) {
-            if (zzAlbums){
+        if (zzAlbums){
+            if (urls[i].includes('zz')) {
                 if (urls[i].includes('/a/')) {
                     albumID = urls[i].split('/a/')[1];
                     console.log("URL: " + urls[i]);
@@ -421,8 +427,18 @@ async function download(post, fileName, altFileName) {
             }
             urls[i] = '';
         }
+        if (urls[i].includes('stream.bunkr')) {
+            var extUrl = await gatherExternalLinks(urls[i], "stream.bunkr");
+            if (extUrl.length > 0) {
+                    for (let index = 0; index < extUrl.length; index++) {
+                        const element = extUrl[index];
+                        urls.push(element);
+                }
+            }
+            urls[i] = '';
+        }
     }
-    console.log(albuminfo);
+    //console.log(albuminfo);
 
     urls = urls.filter(function (e) { return e });   //removes blank entries
     urls = urls.filter(function (v, i) { return urls.indexOf(v) == i; });
@@ -439,9 +455,9 @@ async function download(post, fileName, altFileName) {
         if (current < total) {
             const dataText = `Downloading ${current + 1}/${total} (%percent%)`
             const url = urls[current++];
-            const isHLS = url.includes('sendvid.com');
+            //const isHLS = url.includes('sendvid.com');
             var needsReferrer = false;
-            //const isHLS = false;
+            const isHLS = false;
             if (isHLS) {
                 console.log(JSON.stringify({ 'url': url.replace('//', '') }))
             }
@@ -529,7 +545,7 @@ async function download(post, fileName, altFileName) {
                         } else {
                             var url = URL.createObjectURL(blob);
                             console.log("url: " + url);
-                            console.log("fileName: " + fileName);
+                            console.log("Saved to: " + fileName);
                             GM_download({
                                 url: url,
                                 name: `${fileName}.zip`,
@@ -642,20 +658,12 @@ function getPostLinks(post) {
                 if (link.includes('.bunkr.')) {
                     if (bunkrVideoLinks){
                         if (!link.includes('/a/')) {
-                            if (link.includes('stream.bunkr')) {
-                                if (link.includes('.is/')) {
-                                    link = link.replace(".is/v/", ".is/");
-                                } else {
-                                    link = link.replace(".to/v/", ".is/");
-                                }
-                                link = link.replace("stream.", "media-files.");
-                            }
-                            else{
+                            if (!link.includes('stream.')) {
                                 if(Videos.some(s => link.includes(s))) {
                                     console.log("original link: " + link);
                                     link = link.replace('//cdn', '//media-files');
                                     link = link.replace(".to/", ".is/");
-                                    console.log("changed link: " + link);
+                                    console.log("bunkr download link: " + link);
                                 }
                             }
                         }
