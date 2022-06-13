@@ -3,7 +3,7 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.6.3
+// @version 1.6.4
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://simp3.jpg.church/images/Thotsbay-Logo.png
@@ -278,7 +278,10 @@ async function gatherExternalLinks(externalLink, type) {
                 if (type === "stream.bunkr") {
 
                     var requestResponse = response.response;
-                    linkElement = requestResponse.getElementById('downloadBtn');
+                    bunkrMediaInfos = JSON.parse(requestResponse.getElementById('__NEXT_DATA__').firstChild.data);
+                    bunkrServer = bunkrMediaInfos.props.pageProps.file.mediafiles;
+                    bunkrFileName = bunkrMediaInfos.props.pageProps.file.name;
+                    linkElement = bunkrServer.concat("/", bunkrFileName);
                     console.log("bunkr download link: " + linkElement);
                     resolveCache.push(linkElement);
                     resolve(resolveCache);
@@ -438,7 +441,6 @@ async function download(post, fileName, altFileName) {
             urls[i] = '';
         }
     }
-    //console.log(albuminfo);
 
     urls = urls.filter(function (e) { return e });   //removes blank entries
     urls = urls.filter(function (v, i) { return urls.indexOf(v) == i; });
@@ -457,6 +459,7 @@ async function download(post, fileName, altFileName) {
             const url = urls[current++];
             //const isHLS = url.includes('sendvid.com');
             var needsReferrer = false;
+            var userAgent = navigator.userAgent;
             const isHLS = false;
             if (isHLS) {
                 console.log(JSON.stringify({ 'url': url.replace('//', '') }))
@@ -469,7 +472,7 @@ async function download(post, fileName, altFileName) {
                 method: isHLS ? 'POST' : 'GET',
                 url: isHLS ? 'http://127.0.0.1:5000/json' : url,
                 data: isHLS ? JSON.stringify({ 'url': url }) : null,
-                headers: headerHelper(refUrl, isHLS, needsReferrer),
+                headers: {"Referer": url, "user-agent": userAgent},  //headerHelper(refUrl, isHLS, needsReferrer),
                 responseType: 'blob',
                 onprogress: function (evt) {
                     var percentComplete = (evt.loaded / evt.total) * 100;
@@ -481,7 +484,7 @@ async function download(post, fileName, altFileName) {
                         var file_name = response.responseHeaders.match(/^content-disposition.+(?:filename=)(.+)$/mi)[1].replace(/\"/g, '');
                     }
                     catch (err) {
-                        file_name = new URL(response.finalUrl).pathname.split('/').pop(); //response.finalUrl.split('/').pop().split('?')[0];
+                        file_name = new URL(response.finalUrl).pathname.split('/').pop();
                     } finally {
                         file_name = decodeURIComponent(file_name);
                         if (createZip) {
@@ -513,7 +516,8 @@ async function download(post, fileName, altFileName) {
                             }
                             var url = URL.createObjectURL(data);
                             GM_download({
-                                url: url, name: storePath,
+                                url: url,
+                                name: storePath,
                                 onload: function () {
                                     URL.revokeObjectURL(url);
                                     blob = null;
@@ -663,7 +667,6 @@ function getPostLinks(post) {
                                     console.log("original link: " + link);
                                     link = link.replace('//cdn', '//media-files');
                                     link = link.replace(".to/", ".is/");
-                                    console.log("bunkr download link: " + link);
                                 }
                             }
                         }
