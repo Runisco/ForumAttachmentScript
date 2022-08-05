@@ -3,18 +3,20 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.6.4
+// @version 1.6.5
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://simp3.jpg.church/images/Thotsbay-Logo.png
 // @license WTFPL; http://www.wtfpl.net/txt/copying/
 // @match https://forum.thotsbay.com/threads/*
+// @match https://forum.thotsbay.to/threads/*
 // @require https://code.jquery.com/jquery-3.3.1.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js
 // @require https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js
 // @require https://cdn.jsdelivr.net/npm/m3u8-parser@4.5.2/dist/m3u8-parser.min.js
 // @connect self
 // @connect thotsbay.com
+// @connect thotsbay.to
 // @connect bunkr.to
 // @connect bunkr.is
 // @connect cyberdrop.me
@@ -55,7 +57,7 @@
 
 // ----- Settings ----- //
 
-var thanks = true;                 //Give thanks to posts?
+var thanks = false;                 //Give thanks to posts?
 
 var cyberdropAlbums = false;       //Download Cyberdrop Albums?
 var bunkrAlbums = false;           //Download Bunkr Albums?
