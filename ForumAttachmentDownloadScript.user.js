@@ -3,7 +3,7 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.6.5
+// @version 1.6.6
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://simp3.jpg.church/images/Thotsbay-Logo.png
@@ -119,6 +119,7 @@ const getThreadTitle = () => {
     let threadTitle = [...document.querySelector('.p-title-value').childNodes].reduce((title, child) => {
         return child.nodeType === 3 && !isNullOrEmpty(child.textContent) ? (title += child.textContent.replace(/\n/g, '')) : '';
     });
+    threadTitle = threadTitle.trim();
     // Check for title in object
     if (typeof threadTitle === "object") {
         threadTitle = threadTitle['wholeText'];
