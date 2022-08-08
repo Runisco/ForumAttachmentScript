@@ -3,7 +3,7 @@
 // @namespace https://github.com/MandoCoding
 // @author ThotDev, DumbCodeGenerator, Archivist, Mando
 // @description Download galleries from posts on XenForo forums
-// @version 1.6.6
+// @version 1.6.7
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://simp3.jpg.church/images/Thotsbay-Logo.png
@@ -57,7 +57,7 @@
 
 // ----- Settings ----- //
 
-var thanks = false;                 //Give thanks to posts?
+var thanks = true;                 //Give thanks to posts?
 
 var cyberdropAlbums = false;       //Download Cyberdrop Albums?
 var bunkrAlbums = false;           //Download Bunkr Albums?
@@ -119,11 +119,11 @@ const getThreadTitle = () => {
     let threadTitle = [...document.querySelector('.p-title-value').childNodes].reduce((title, child) => {
         return child.nodeType === 3 && !isNullOrEmpty(child.textContent) ? (title += child.textContent.replace(/\n/g, '')) : '';
     });
-    threadTitle = threadTitle.trim();
     // Check for title in object
     if (typeof threadTitle === "object") {
         threadTitle = threadTitle['wholeText'];
     }
+    threadTitle = threadTitle.trim();
     threadTitle = threadTitle.replace(/\n/g, '');
     threadTitle = threadTitle.toString();
     // Remove emoji from title
