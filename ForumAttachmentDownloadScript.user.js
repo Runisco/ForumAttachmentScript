@@ -1,15 +1,14 @@
 // ==UserScript==
 // @name Various Forums Gallery Downloader
 // @namespace https://github.com/MandoCoding
-// @author ThotDev, DumbCodeGenerator, Archivist, Mando
+// @author ThotDev, DumbCodeGenerator, Archivist, Mando, Runisco
 // @description Download galleries from posts on XenForo forums
-// @version 1.6.7
+// @version 2.0.0
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://simp3.jpg.church/images/Thotsbay-Logo.png
 // @license WTFPL; http://www.wtfpl.net/txt/copying/
-// @match https://forum.thotsbay.com/threads/*
-// @match https://forum.thotsbay.to/threads/*
+// @match https://forums.socialmediagirls.com/threads/*
 // @require https://code.jquery.com/jquery-3.3.1.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js
 // @require https://unpkg.com/file-saver@2.0.4/dist/FileSaver.min.js
@@ -575,7 +574,7 @@ async function download(post, fileName, altFileName) {
                 let likeID;
                 try {
                     likeTag = post.parentNode.parentNode.parentNode.querySelector('.reaction--imageHidden');
-                    likeID = likeTag.getAttribute('href').replace("id=1", "id=33");
+                    likeID = likeTag.getAttribute('href').replace("id=1", "id=11");
                     likeTag.setAttribute("href", likeID);
                     likeTag.click();
                 } catch {
