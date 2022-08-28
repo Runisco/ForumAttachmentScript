@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name Various Forums Gallery Downloader
 // @namespace https://github.com/MandoCoding
-// @author ThotDev, DumbCodeGenerator, Archivist, Mando
+// @author ThotDev, DumbCodeGenerator, Archivist, Mando, Runisco
 // @description Download galleries from posts on XenForo forums
-// @version 1.6.7
+// @version 2.0.0
 // @updateURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @downloadURL https://github.com/MandoCoding/ForumAttachmentScript/raw/main/ForumAttachmentDownloadScript.user.js
 // @icon https://simp3.jpg.church/images/Thotsbay-Logo.png
